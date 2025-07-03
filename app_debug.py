@@ -3,7 +3,6 @@ import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 import io
-import os
 
 st.set_page_config(page_title="Productividad Oficinas", layout="wide")
 st.title("🏢 Análisis de Productividad de Oficinas CENTURY 21")
@@ -51,13 +50,7 @@ def analizar_excel(df, mapping):
     df["Oficina Colocador"] = df["Asesor Colocador"].map(mapping)
     df["Oficina"] = df["Oficina Captador"].fillna(df["Oficina Colocador"])
 
-    resultado = (
-        df.groupby("Oficina")
-        .agg(Ventas=("Precio de Cierre", "count"),
-             Total=("Precio de Cierre", "sum"))
-        .sort_values("Total", ascending=False)
-    )
-    return resultado
+    return df
 
 # --- UI ---
 archivo = st.file_uploader("📤 Sube el archivo Excel generado por 21 Online", type=["xlsx"])
@@ -72,20 +65,39 @@ if archivo:
 
         with st.spinner("🔍 Obteniendo asesores desde las oficinas..."):
             mapping = obtener_mapeo()
+
         st.success(f"✅ {len(mapping)} asesores cargados desde la web.")
 
-        with st.spinner("📊 Procesando análisis de productividad..."):
-            resultado = analizar_excel(df, mapping)
+        with st.spinner("📊 Procesando datos..."):
+            df = analizar_excel(df, mapping)
 
-        st.subheader("🏆 Ranking por Oficina (Total Bs)")
+        st.info(f"📌 Total de propiedades en el archivo: {len(df)}")
+        asignadas = df["Oficina"].notna().sum()
+        no_asignadas = len(df) - asignadas
+        st.info(f"🏢 Propiedades con oficina asignada: {asignadas}")
+        st.warning(f"❌ Propiedades sin oficina asignada: {no_asignadas}")
+
+        if no_asignadas > 0:
+            st.subheader("❗ Propiedades sin oficina asignada")
+            st.dataframe(df[df["Oficina"].isna()][["Asesor Captador", "Asesor Colocador", "Precio de Cierre"]])
+
+        resultado = (
+            df[df["Oficina"].notna()]
+            .groupby("Oficina")
+            .agg(Ventas=("Precio de Cierre", "count"),
+                 Total=("Precio de Cierre", "sum"))
+            .sort_values("Total", ascending=False)
+        )
+
+        st.subheader("🏆 Ranking por Oficina")
         st.dataframe(resultado)
 
         buffer = io.BytesIO()
         resultado.to_excel(buffer, index=True)
         buffer.seek(0)
-        st.download_button("📥 Descargar Resultados", buffer, "productividad_oficinas.xlsx")
+        st.download_button("📥 Descargar Excel", buffer, "productividad_oficinas.xlsx")
 
     except Exception as e:
-        st.error(f"❌ Ocurrió un error al procesar el archivo: {e}")
+        st.error(f"❌ Error al procesar el archivo: {e}")
 else:
     st.info("Por favor, sube un archivo Excel (.xlsx) para comenzar.")
