@@ -3,14 +3,34 @@ import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 import io
+import json
 
 st.set_page_config(page_title="Productividad Oficinas", layout="wide")
 st.title("🏢 Análisis de Productividad de Oficinas CENTURY 21")
 
 # --- FUNCIONES ---
 @st.cache_data(show_spinner=False)
-def obtener_mapeo():
+def obtener_mapeo(mapping_json=None):
+    """Return mapping of agent names to offices.
+
+    If ``mapping_json`` is provided, it will be used as the data source.
+    Otherwise the function attempts to scrape the office URLs listed in
+    ``all_office_links.txt``.
+    """
     mapping = {}
+
+    # Try to load from uploaded JSON first
+    if mapping_json is not None:
+        try:
+            data = mapping_json.read()
+            if isinstance(data, bytes):
+                data = data.decode("utf-8")
+            mapping = json.loads(data)
+            st.info("ℹ️ Mapeo cargado desde archivo local.")
+            return mapping
+        except Exception as e:
+            st.warning(f"⚠️ Error al leer archivo JSON: {e}")
+
     try:
         with open("all_office_links.txt", "r", encoding="utf-8") as f:
             urls = [line.strip() for line in f if line.strip()]
@@ -63,6 +83,7 @@ def analizar_excel(df, mapping):
 # --- UI ---
 archivo = st.file_uploader("📤 Sube el archivo Excel generado por 21 Online", type=["xlsx"])
 equivalencias = st.file_uploader("🔄 (Opcional) Sube un archivo CSV con equivalencias de nombres", type=["csv"])
+mapping_file = st.file_uploader("📁 (Opcional) Mapeo asesores->oficinas (JSON)", type=["json"])
 
 if archivo:
     try:
@@ -78,9 +99,9 @@ if archivo:
         st.dataframe(df.head())
 
         with st.spinner("🔍 Obteniendo asesores desde las oficinas..."):
-            mapping = obtener_mapeo()
+            mapping = obtener_mapeo(mapping_file)
 
-        st.success(f"✅ {len(mapping)} asesores cargados desde la web.")
+        st.success(f"✅ {len(mapping)} asesores cargados desde la web o archivo.")
 
         with st.spinner("📊 Procesando datos..."):
             df = analizar_excel(df, mapping)
