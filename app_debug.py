@@ -37,15 +37,13 @@ def analizar_excel(df, mapping):
     df["Asesor Captador"] = df["Asesor Captador"].astype(str).str.strip()
     df["Asesor Colocador"] = df["Asesor Colocador"].astype(str).str.strip()
     df["Precio de Cierre"] = (
-        pd.to_numeric(
-            df["Precio Cierre"]
-            .astype(str)
-            .str.replace("$", "", regex=False)
-            .str.replace(",", "", regex=False)
-            .str.strip(),
-            errors="coerce",
-        )
-        .fillna(0.0)
+        df["Precio Cierre"]
+        .astype(str)
+        .str.replace("$", "")
+        .str.replace(",", "")
+        .str.strip()
+        .replace("", "0")
+        .astype(float)
     )
 
     df["Oficina Captador"] = df["Asesor Captador"].map(mapping)
