@@ -10,7 +10,7 @@ OFFICE_URLS = [
     "https://c21.com.bo/inmobiliaria/59-century-21-grand-sky-achumani-la-paz-bolivia",
     "https://c21.com.bo/inmobiliaria/58-century-21-realtor-achumani-la-paz-bolivia",
     "https://c21.com.bo/inmobiliaria/43-century-21-imperial-agua-de-castilla-potosi-bolivia",
-    # Puedes agregar todos los links aquí
+    # Estos son solo algunos ejemplos; revisa 'all_office_links.txt' para la lista completa
 ]
 
 def extract_office(url):

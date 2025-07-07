@@ -4,3 +4,7 @@ requests
 beautifulsoup4
 fuzzywuzzy
 python-Levenshtein
+codex/find-and-fix-a-bug-in-codebase
+streamlit
+pytest
+main
